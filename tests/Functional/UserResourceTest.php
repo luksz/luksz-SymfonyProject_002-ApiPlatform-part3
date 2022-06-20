@@ -10,8 +10,9 @@ class UserResourceTest extends CustomApiTestCase
 {
     public function testCreateUser()
     {
+        dump('test 0');
         $client = self::createClient();
-
+        dump('test 1 ');
         $client->request('POST', '/api/users', [
             'json' => [
                 'email' => 'cheeseplease@example.com',
@@ -19,9 +20,11 @@ class UserResourceTest extends CustomApiTestCase
                 'password' => 'brie'
             ]
         ]);
+        dump('test 2 ');
         $this->assertResponseStatusCodeSame(201);
-
+        dump('test 3 ');
         $this->logIn($client, 'cheeseplease@example.com', 'brie');
+        dump('test 4 ');
     }
 
     public function testUpdateUser()
@@ -30,7 +33,7 @@ class UserResourceTest extends CustomApiTestCase
         $user = UserFactory::new()->create();
         $this->logIn($client, $user);
 
-        $client->request('PUT', '/api/users/'.$user->getId(), [
+        $client->request('PUT', '/api/users/' . $user->getId(), [
             'json' => [
                 'username' => 'newusername',
                 'roles' => ['ROLE_ADMIN'] // will be ignored
@@ -52,7 +55,7 @@ class UserResourceTest extends CustomApiTestCase
         $authenticatedUser = UserFactory::new()->create();
         $this->logIn($client, $authenticatedUser);
 
-        $client->request('GET', '/api/users/'.$user->getId());
+        $client->request('GET', '/api/users/' . $user->getId());
         $this->assertJsonContains([
             'username' => $user->getUsername(),
         ]);
@@ -69,7 +72,7 @@ class UserResourceTest extends CustomApiTestCase
         $user->save();
         $this->logIn($client, $user);
 
-        $client->request('GET', '/api/users/'.$user->getId());
+        $client->request('GET', '/api/users/' . $user->getId());
         $this->assertJsonContains([
             'phoneNumber' => '555.123.4567',
             'isMe' => true,

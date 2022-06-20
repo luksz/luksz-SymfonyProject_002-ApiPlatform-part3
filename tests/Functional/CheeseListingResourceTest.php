@@ -4,6 +4,7 @@ namespace App\Tests\Functional;
 
 use App\Entity\CheeseListing;
 use App\Factory\CheeseListingFactory;
+use App\Factory\CheeseNotificationFactory;
 use App\Factory\UserFactory;
 use App\Test\CustomApiTestCase;
 
@@ -33,12 +34,12 @@ class CheeseListingResourceTest extends CustomApiTestCase
         $this->assertResponseStatusCodeSame(201);
 
         $client->request('POST', '/api/cheeses', [
-            'json' => $cheesyData + ['owner' => '/api/users/'.$otherUser->getId()],
+            'json' => $cheesyData + ['owner' => '/api/users/' . $otherUser->getId()],
         ]);
         $this->assertResponseStatusCodeSame(400, 'not passing the correct owner');
 
         $client->request('POST', '/api/cheeses', [
-            'json' => $cheesyData + ['owner' => '/api/users/'.$authenticatedUser->getId()],
+            'json' => $cheesyData + ['owner' => '/api/users/' . $authenticatedUser->getId()],
         ]);
         $this->assertResponseStatusCodeSame(201);
     }
@@ -54,14 +55,14 @@ class CheeseListingResourceTest extends CustomApiTestCase
         ]);
 
         $this->logIn($client, $user2);
-        $client->request('PUT', '/api/cheeses/'.$cheeseListing->getId(), [
+        $client->request('PUT', '/api/cheeses/' . $cheeseListing->getId(), [
             // try to trick security by reassigning to this user
-            'json' => ['title' => 'updated', 'owner' => '/api/users/'.$user2->getId()]
+            'json' => ['title' => 'updated', 'owner' => '/api/users/' . $user2->getId()]
         ]);
         $this->assertResponseStatusCodeSame(403, 'only author can updated');
 
         $this->logIn($client, $user1);
-        $client->request('PUT', '/api/cheeses/'.$cheeseListing->getId(), [
+        $client->request('PUT', '/api/cheeses/' . $cheeseListing->getId(), [
             'json' => ['title' => 'updated']
         ]);
         $this->assertResponseStatusCodeSame(200);
@@ -111,11 +112,35 @@ class CheeseListingResourceTest extends CustomApiTestCase
 
         $cheeseListing1 = CheeseListingFactory::new()->create(['owner' => $otherUser]);
 
-        $client->request('GET', '/api/cheeses/'.$cheeseListing1->getId());
+        $client->request('GET', '/api/cheeses/' . $cheeseListing1->getId());
         $this->assertResponseStatusCodeSame(404);
 
-        $response = $client->request('GET', '/api/users/'.$otherUser->getId());
+        $response = $client->request('GET', '/api/users/' . $otherUser->getId());
         $data = $response->toArray();
         $this->assertEmpty($data['cheeseListings']);
+    }
+
+    public function testPublishCheeseListing()
+    {
+        $client = self::createClient();
+        $user = UserFactory::new()->create();
+        $cheeseListing = CheeseListingFactory::new()->create([
+            'owner' => $user,
+        ]);
+        $this->logIn($client, $user);
+        $client->request('PUT', '/api/cheeses/' . $cheeseListing->getId(), [
+            'json' => ['isPublished' => true]
+        ]);
+        $this->assertResponseStatusCodeSame(200);
+
+        $cheeseListing->refresh();
+        $this->assertTrue($cheeseListing->getIsPublished());
+        CheeseNotificationFactory::repository()->assertCount(1, 'There should be one notification about being published');
+
+        // publishing again should not create a second notification
+        $client->request('PUT', '/api/cheeses/' . $cheeseListing->getId(), [
+            'json' => ['isPublished' => true]
+        ]);
+        CheeseNotificationFactory::repository()->assertCount(1);
     }
 }
