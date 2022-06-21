@@ -98,6 +98,7 @@ class CheeseListing
 
     /**
      * @ORM\Column(type="boolean")
+     * @Groups({"cheese:write"})
      */
     private $isPublished = false;
 
@@ -139,7 +140,7 @@ class CheeseListing
             return $this->description;
         }
 
-        return substr($this->description, 0, 40).'...';
+        return substr($this->description, 0, 40) . '...';
     }
 
     public function setDescription(string $description): self
