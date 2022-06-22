@@ -93,10 +93,21 @@ class User implements UserInterface
      */
     private $phoneNumber;
 
+    /**
+     * Returns true if this is the currently-authenticated user
+     * @Groups({"user:read"})
+     */
+    private  $isMe;
+
+
+
     public function __construct()
     {
         $this->cheeseListings = new ArrayCollection();
     }
+
+
+    // --------------------------------------------
 
     public function getId(): ?int
     {
@@ -197,7 +208,7 @@ class User implements UserInterface
      */
     public function getPublishedCheeseListings(): Collection
     {
-        return $this->cheeseListings->filter(function(CheeseListing $cheeseListing) {
+        return $this->cheeseListings->filter(function (CheeseListing $cheeseListing) {
             return $cheeseListing->getIsPublished();
         });
     }
@@ -247,5 +258,17 @@ class User implements UserInterface
         $this->phoneNumber = $phoneNumber;
 
         return $this;
+    }
+
+    public function getIsMe(): bool
+    {
+        if ($this->isMe === null) {
+            throw new \LogicException('The isMe field has not been initialized');
+        }
+        return $this->isMe;
+    }
+    public function setIsMe(bool $isMe)
+    {
+        $this->isMe = $isMe;
     }
 }

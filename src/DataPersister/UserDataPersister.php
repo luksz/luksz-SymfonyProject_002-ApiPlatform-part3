@@ -8,6 +8,7 @@ use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
+use Symfony\Component\Security\Core\Security;
 
 class UserDataPersister implements ContextAwareDataPersisterInterface
 {
@@ -16,12 +17,14 @@ class UserDataPersister implements ContextAwareDataPersisterInterface
     private UserPasswordEncoderInterface $userPasswordEncoder;
     private DataPersisterInterface $decoratedDataPersister;
     private LoggerInterface $logger;
+    private Security $security;
 
     // public function __construct(DataPersisterInterface $decoratedDataPersister,  EntityManagerInterface $entityManager, UserPasswordEncoderInterface $userPasswordEncoder)
     public function __construct(
         DataPersisterInterface $decoratedDataPersister,
         UserPasswordEncoderInterface $userPasswordEncoder,
-        LoggerInterface $loggerInterface
+        LoggerInterface $loggerInterface,
+        Security $security
     )
     // public function __construct(DataPersisterInterface $decoratedDataPersister, UserPasswordEncoderInterface $userPasswordEncoder)
     {
@@ -30,6 +33,7 @@ class UserDataPersister implements ContextAwareDataPersisterInterface
         $this->decoratedDataPersister = $decoratedDataPersister;
         $this->userPasswordEncoder = $userPasswordEncoder;
         $this->logger = $loggerInterface;
+        $this->security = $security;
     }
 
     public function supports($data, array $context = []): bool
@@ -43,8 +47,6 @@ class UserDataPersister implements ContextAwareDataPersisterInterface
      */
     public function persist($data, array $context = [])
     {
-        dump(__METHOD__);
-        dump($context);
 
 
         if (($context['item_operation_name'] ?? null) === 'put') {
@@ -69,14 +71,10 @@ class UserDataPersister implements ContextAwareDataPersisterInterface
             );
             $data->eraseCredentials();
         }
-        dump('--1');
-        // $this->entityManager->persist($data);
-        // $this->entityManager->flush();
-        dump($data);
-        dump($this->decoratedDataPersister);
+
+        $data->setIsMe($this->security->getUser() === $data);
+
         $d = $this->decoratedDataPersister->persist($data);
-        dump('--2');
-        dump($d);
     }
 
     public function remove($data, array $context = [])

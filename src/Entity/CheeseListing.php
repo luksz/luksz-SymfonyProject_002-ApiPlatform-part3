@@ -14,6 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
+use App\Validator\ValidIsPublished;
 
 /**
  * @ApiResource(
@@ -53,6 +54,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @ApiFilter(PropertyFilter::class)
  * @ORM\Entity(repositoryClass="App\Repository\CheeseListingRepository")
  * @ORM\EntityListeners({"App\Doctrine\CheeseListingSetOwnerListener"})
+ * @ValidIsPublished
  */
 class CheeseListing
 {

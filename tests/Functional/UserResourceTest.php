@@ -20,11 +20,10 @@ class UserResourceTest extends CustomApiTestCase
                 'password' => 'brie'
             ]
         ]);
-        dump('test 2 ');
+
         $this->assertResponseStatusCodeSame(201);
-        dump('test 3 ');
+
         $this->logIn($client, 'cheeseplease@example.com', 'brie');
-        dump('test 4 ');
     }
 
     public function testUpdateUser()
@@ -56,6 +55,7 @@ class UserResourceTest extends CustomApiTestCase
         $this->logIn($client, $authenticatedUser);
 
         $client->request('GET', '/api/users/' . $user->getId());
+        $this->assertResponseStatusCodeSame(200);
         $this->assertJsonContains([
             'username' => $user->getUsername(),
         ]);
