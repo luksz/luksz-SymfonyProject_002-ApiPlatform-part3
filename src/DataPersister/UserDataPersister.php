@@ -30,6 +30,7 @@ class UserDataPersister implements ContextAwareDataPersisterInterface
     {
         // dump(__METHOD__);
         // $this->entityManager = $entityManager;
+
         $this->decoratedDataPersister = $decoratedDataPersister;
         $this->userPasswordEncoder = $userPasswordEncoder;
         $this->logger = $loggerInterface;
@@ -72,7 +73,8 @@ class UserDataPersister implements ContextAwareDataPersisterInterface
             $data->eraseCredentials();
         }
 
-        $data->setIsMe($this->security->getUser() === $data);
+        // now handled in a listener
+        //$data->setIsMe($this->security->getUser() === $data);
 
         $d = $this->decoratedDataPersister->persist($data);
     }
