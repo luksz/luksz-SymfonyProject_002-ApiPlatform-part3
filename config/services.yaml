@@ -49,3 +49,6 @@ services:
         bind:
             $collectionDataProvider: '@api_platform.doctrine.orm.default.collection_data_provider'
             $itemDataProvider: '@api_platform.doctrine.orm.default.item_data_provider'            
+
+    App\Doctrine\UserSetIsMvpListener:
+        tags: [doctrine.orm.entity_listener]            

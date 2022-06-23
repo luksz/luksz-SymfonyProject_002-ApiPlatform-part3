@@ -13,6 +13,8 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
+use App\Doctrine\UserSetIsMvpListener;
+use Stringable;
 
 /**
  * @ApiResource(
@@ -36,6 +38,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @UniqueEntity(fields={"username"})
  * @UniqueEntity(fields={"email"})
  * @ORM\Entity(repositoryClass="App\Repository\UserRepository")
+ * @ORM\EntityListeners({UserSetIsMvpListener::class})
  */
 class User implements UserInterface
 {
@@ -97,9 +100,19 @@ class User implements UserInterface
      * Returns true if this is the currently-authenticated user
      * @Groups({"user:read"})
      */
-    private  $isMe;
+    private  $isMe = false;
+    /**
+     * Returns Extralazy
+     * @Groups({"user:read"})
+     */
+    private Stringable $bio;
 
-
+    /**
+     * Returns true if this user is an MVP
+     *
+     * @Groups({"user:read"})
+     */
+    private $isMvp = false;
 
     public function __construct()
     {
@@ -262,13 +275,45 @@ class User implements UserInterface
 
     public function getIsMe(): bool
     {
-        if ($this->isMe === null) {
-            throw new \LogicException('The isMe field has not been initialized');
-        }
+
         return $this->isMe;
     }
     public function setIsMe(bool $isMe)
     {
         $this->isMe = $isMe;
+    }
+
+    public function getIsMvp(): bool
+    {
+        return $this->isMvp;
+    }
+    public function setIsMvp(bool $isMvp)
+    {
+        $this->isMvp = $isMvp;
+    }
+
+    // public function setLazzyIsMvp(Stringable $isMvp)
+    // {
+    //     $this->isMvp = $isMvp;
+    // }
+
+    /**
+     * Get returns Extralazy
+     */
+    public function getBio()
+    {
+        return $this->bio;
+    }
+
+    /**
+     * Set returns Extralazy
+     *
+     * @return  self
+     */
+    public function setBio(Stringable $bio)
+    {
+        $this->bio = $bio;
+
+        return $this;
     }
 }
