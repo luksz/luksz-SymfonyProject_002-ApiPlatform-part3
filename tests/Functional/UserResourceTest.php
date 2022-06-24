@@ -10,9 +10,9 @@ class UserResourceTest extends CustomApiTestCase
 {
     public function testCreateUser()
     {
-        dump('test 0');
+
         $client = self::createClient();
-        dump('test 1 ');
+
         $client->request('POST', '/api/users', [
             'json' => [
                 'email' => 'cheeseplease@example.com',

@@ -15,6 +15,7 @@ use Symfony\Component\Serializer\Annotation\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
 use App\Doctrine\UserSetIsMvpListener;
 use Stringable;
+use ApiPlatform\Core\Annotation\ApiProperty;
 
 /**
  * @ApiResource(
@@ -219,6 +220,7 @@ class User implements UserInterface
      * @Groups({"user:read"})
      * @return Collection<CheeseListing>
      * @SerializedName("cheeseListings")
+     * @ApiProperty(readableLink=true)
      */
     public function getPublishedCheeseListings(): Collection
     {

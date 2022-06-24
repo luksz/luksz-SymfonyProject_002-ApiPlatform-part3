@@ -19,6 +19,7 @@ class CheeseListingResourceTest extends CustomApiTestCase
         $this->assertResponseStatusCodeSame(401);
 
         $authenticatedUser = UserFactory::new()->create();
+        $authenticatedUser->setRoles(['ROLE_ADMIN']);
         $otherUser = UserFactory::new()->create();
         $this->logIn($client, $authenticatedUser);
 
@@ -92,7 +93,6 @@ class CheeseListingResourceTest extends CustomApiTestCase
         $this->assertJsonContains(['hydra:member' => [
             0 => [
                 '@id' => '/api/cheeses/' . $cheeseListing2->getId(),
-                '@type' => 'cheese',
                 'title' => 'cheese2',
                 'description' => 'cheese',
                 'price' => 1000,
