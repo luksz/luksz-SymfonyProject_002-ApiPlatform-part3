@@ -15,6 +15,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
 use App\Validator\ValidIsPublished;
+use App\ApiPlatform\CheeseSearchFilter;
 
 /**
  * @ApiResource(
@@ -44,6 +45,7 @@ use App\Validator\ValidIsPublished;
  *     }
  * )
  * @ApiFilter(BooleanFilter::class, properties={"isPublished"})
+ * @ApiFilter(CheeseSearchFilter::class, arguments={"useLike"=true})
  * @ApiFilter(SearchFilter::class, properties={
  *     "title": "partial",
  *     "description": "partial",

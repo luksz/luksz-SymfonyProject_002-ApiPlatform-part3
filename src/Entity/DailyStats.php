@@ -9,6 +9,9 @@ use DateTimeImmutable;
 use ApiPlatform\Core\Annotation\ApiProperty;
 use DateTimeInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
+use ApiPlatform\Core\Annotation\ApiFilter;
+use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
+use App\ApiPlatform\DailyStatsDateFilter;
 
 /**
  * @ApiResource(
@@ -21,11 +24,11 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *     collectionOperations={"get"},
  *    paginationItemsPerPage=7
  * )
+ * @ApiFilter(DailyStatsDateFilter::class, arguments={"throwOnInvalid"=true})
+ 
  */
 class DailyStats
 {
-
-
 
     /**
      * @Groups({"daily-stats:read"})
