@@ -17,11 +17,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 use App\Validator\ValidIsPublished;
 use App\ApiPlatform\CheeseSearchFilter;
 use App\Dto\CheeseListingOutput;
+use App\Dto\CheeseListingInput;
 
 /**
  * @ApiResource(
  *     
- * 
+ *     input=CheeseListingInput::CLASS,
  *     output=CheeseListingOutput::CLASS,
  *     normalizationContext={"groups"={"cheese:read"}},
  *     denormalizationContext={"groups"={"cheese:write"}},
@@ -85,7 +86,7 @@ class CheeseListing
 
     /**
      * @ORM\Column(type="text")
-     * @Assert\NotBlank()
+
      */
     private $description;
 
@@ -94,7 +95,6 @@ class CheeseListing
      *
      * @ORM\Column(type="integer")
      * @Groups({ "cheese:write", "user:write"})
-     * @Assert\NotBlank()
      */
     private $price;
 
@@ -113,7 +113,7 @@ class CheeseListing
      * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="cheeseListings")
      * @ORM\JoinColumn(nullable=false)
      * @Groups({ "cheese:collection:post"})
-     * @IsValidOwner()
+     
      */
     private $owner;
 
@@ -147,18 +147,7 @@ class CheeseListing
         return $this;
     }
 
-    /**
-     * The description of the cheese as raw text.
-     *
-     * @Groups({"cheese:write", "user:write"})
-     * @SerializedName("description")
-     */
-    public function setTextDescription(string $description): self
-    {
-        $this->description = nl2br($description);
 
-        return $this;
-    }
 
     public function getPrice(): ?int
     {
