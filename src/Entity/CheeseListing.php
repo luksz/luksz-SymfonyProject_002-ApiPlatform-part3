@@ -8,22 +8,18 @@ use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\BooleanFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\RangeFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Core\Serializer\Filter\PropertyFilter;
-use App\Validator\IsValidOwner;
+use App\ApiPlatform\CheeseSearchFilter;
+use App\Dto\CheeseListingInput;
+use App\Dto\CheeseListingOutput;
+use App\Validator\ValidIsPublished;
 use Carbon\Carbon;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
-use Symfony\Component\Validator\Constraints as Assert;
-use App\Validator\ValidIsPublished;
-use App\ApiPlatform\CheeseSearchFilter;
-use App\Dto\CheeseListingOutput;
-use App\Dto\CheeseListingInput;
 
 /**
  * @ApiResource(
- *     
- *     input=CheeseListingInput::CLASS,
  *     output=CheeseListingOutput::CLASS,
+ *     input=CheeseListingInput::CLASS,
  *     normalizationContext={"groups"={"cheese:read"}},
  *     denormalizationContext={"groups"={"cheese:write"}},
  *     itemOperations={
@@ -50,7 +46,6 @@ use App\Dto\CheeseListingInput;
  *     }
  * )
  * @ApiFilter(BooleanFilter::class, properties={"isPublished"})
- * @ApiFilter(CheeseSearchFilter::class, arguments={"useLike"=true})
  * @ApiFilter(SearchFilter::class, properties={
  *     "title": "partial",
  *     "description": "partial",
@@ -59,9 +54,10 @@ use App\Dto\CheeseListingInput;
  * })
  * @ApiFilter(RangeFilter::class, properties={"price"})
  * @ApiFilter(PropertyFilter::class)
+ * @ApiFilter(CheeseSearchFilter::class, arguments={"useLike"=true})
  * @ORM\Entity(repositoryClass="App\Repository\CheeseListingRepository")
  * @ORM\EntityListeners({"App\Doctrine\CheeseListingSetOwnerListener"})
- * @ValidIsPublished
+ * @ValidIsPublished()
  */
 class CheeseListing
 {
@@ -74,19 +70,11 @@ class CheeseListing
 
     /**
      * @ORM\Column(type="string", length=255)
-     * @Groups({ "cheese:write", "user:write"})
-     * @Assert\NotBlank()
-     * @Assert\Length(
-     *     min=2,
-     *     max=50,
-     *     maxMessage="Describe your cheese in 50 chars or less"
-     * )
      */
     private $title;
 
     /**
      * @ORM\Column(type="text")
-
      */
     private $description;
 
@@ -94,7 +82,6 @@ class CheeseListing
      * The price of this delicious cheese, in cents
      *
      * @ORM\Column(type="integer")
-     * @Groups({ "cheese:write", "user:write"})
      */
     private $price;
 
@@ -105,15 +92,12 @@ class CheeseListing
 
     /**
      * @ORM\Column(type="boolean")
-     * @Groups({"cheese:write"})
      */
     private $isPublished = false;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="cheeseListings")
      * @ORM\JoinColumn(nullable=false)
-     * @Groups({ "cheese:collection:post"})
-     
      */
     private $owner;
 
@@ -138,16 +122,12 @@ class CheeseListing
         return $this->description;
     }
 
-
-
     public function setDescription(string $description): self
     {
         $this->description = $description;
 
         return $this;
     }
-
-
 
     public function getPrice(): ?int
     {
@@ -165,8 +145,6 @@ class CheeseListing
     {
         return $this->createdAt;
     }
-
-
 
     public function getIsPublished(): ?bool
     {

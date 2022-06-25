@@ -1,40 +1,42 @@
 <?php
 
-
 namespace App\Dto;
 
 use App\Entity\CheeseListing;
+use App\Entity\User;
+use App\Validator\IsValidOwner;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
-use App\Validator\IsValidOwner;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class CheeseListingInput
 {
     /**
      * @var string
+     * @Groups({"cheese:write", "user:write"})
      * @Assert\NotBlank()
      * @Assert\Length(
      *     min=2,
      *     max=50,
      *     maxMessage="Describe your cheese in 50 chars or less"
      * )
-     * @Groups({"cheese:write", "user:write"})
      */
     public $title;
 
     /**
      * @var int
-     * @Assert\NotBlank()
      * @Groups({"cheese:write", "user:write"})
+     * @Assert\NotBlank()
      */
     public $price;
+
     /**
-     * @IsValidOwner()
     
      * @Groups({"cheese:collection:post"})
+     * @IsValidOwner()
      */
-    public $owner;
+    public ?User $owner = null;
+
     /**
      * @var bool
      * @Groups({"cheese:write"})
@@ -43,10 +45,40 @@ class CheeseListingInput
 
     /**
      * @Assert\NotBlank()
-     *
      */
     public $description;
 
+    public static function createFromEntity(?CheeseListing $cheeseListing): self
+    {
+        $dto = new CheeseListingInput();
+
+        // not an edit, so just return an empty DTO
+        if (!$cheeseListing) {
+            return $dto;
+        }
+
+        $dto->title = $cheeseListing->getTitle();
+        $dto->price = $cheeseListing->getPrice();
+        $dto->description = $cheeseListing->getDescription();
+        $dto->owner = $cheeseListing->getOwner();
+        $dto->isPublished = $cheeseListing->getIsPublished();
+
+        return $dto;
+    }
+
+    public function createOrUpdateEntity(?CheeseListing $cheeseListing): CheeseListing
+    {
+        if (!$cheeseListing) {
+            $cheeseListing = new CheeseListing($this->title);
+        }
+
+        $cheeseListing->setDescription($this->description);
+        $cheeseListing->setPrice($this->price);
+        $cheeseListing->setOwner($this->owner);
+        $cheeseListing->setIsPublished($this->isPublished);
+
+        return $cheeseListing;
+    }
 
     /**
      * The description of the cheese as raw text.
@@ -59,32 +91,5 @@ class CheeseListingInput
         $this->description = nl2br($description);
 
         return $this;
-    }
-
-    public function createOrUpdateEntity(?CheeseListing $cheeseListing): CheeseListing
-    {
-        if (!$cheeseListing) {
-            $cheeseListing = new CheeseListing($this->title);
-        }
-        $cheeseListing->setDescription($this->description);
-        $cheeseListing->setPrice($this->price);
-        $cheeseListing->setOwner($this->owner);
-        $cheeseListing->setIsPublished($this->isPublished);
-        return $cheeseListing;
-    }
-
-    public static function createFromEntity(?CheeseListing $cheeseListing): self
-    {
-        $dto = new CheeseListingInput();
-        // not an edit, so just return an empty DTO
-        if (!$cheeseListing) {
-            return $dto;
-        }
-        $dto->title = $cheeseListing->getTitle();
-        $dto->price = $cheeseListing->getPrice();
-        $dto->description = $cheeseListing->getDescription();
-        $dto->owner = $cheeseListing->getOwner();
-        $dto->isPublished = $cheeseListing->getIsPublished();
-        return $dto;
     }
 }

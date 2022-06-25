@@ -4,18 +4,13 @@ namespace App\DataProvider;
 
 use ApiPlatform\Core\DataProvider\PaginatorInterface;
 use App\Service\StatsHelper;
-use IteratorAggregate;
-use Traversable;
 
-class DailyStatsPaginator implements PaginatorInterface, IteratorAggregate
-
+class DailyStatsPaginator implements PaginatorInterface, \IteratorAggregate
 {
     private $dailyStatsIterator;
     private $statsHelper;
-    protected int $currentPage;
-
-    protected int $maxResults;
-
+    private $currentPage;
+    private $maxResults;
     /**
      * @var \DateTimeInterface|null
      */
@@ -24,7 +19,6 @@ class DailyStatsPaginator implements PaginatorInterface, IteratorAggregate
     public function __construct(StatsHelper $statsHelper, int $currentPage, int $maxResults)
     {
         $this->statsHelper = $statsHelper;
-
         $this->currentPage = $currentPage;
         $this->maxResults = $maxResults;
     }
@@ -33,23 +27,28 @@ class DailyStatsPaginator implements PaginatorInterface, IteratorAggregate
     {
         return ceil($this->getTotalItems() / $this->getItemsPerPage()) ?: 1.;
     }
+
     public function getTotalItems(): float
     {
         return $this->statsHelper->count();
     }
+
     public function getCurrentPage(): float
     {
         return $this->currentPage;
     }
+
     public function getItemsPerPage(): float
     {
         return $this->maxResults;
     }
-    public function count(): int
+
+    public function count()
     {
         return iterator_count($this->getIterator());
     }
-    public function getIterator(): Traversable
+
+    public function getIterator()
     {
         if ($this->dailyStatsIterator === null) {
             $offset = (($this->getCurrentPage() - 1) * $this->getItemsPerPage());
@@ -58,7 +57,6 @@ class DailyStatsPaginator implements PaginatorInterface, IteratorAggregate
             if ($this->fromDate) {
                 $criteria['from'] = $this->fromDate;
             }
-
             $this->dailyStatsIterator = new \ArrayIterator(
                 $this->statsHelper->fetchMany(
                     $this->getItemsPerPage(),

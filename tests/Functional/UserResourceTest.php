@@ -5,12 +5,12 @@ namespace App\Tests\Functional;
 use App\Entity\User;
 use App\Factory\UserFactory;
 use App\Test\CustomApiTestCase;
+use Ramsey\Uuid\Uuid;
 
 class UserResourceTest extends CustomApiTestCase
 {
     public function testCreateUser()
     {
-
         $client = self::createClient();
 
         $client->request('POST', '/api/users', [
@@ -20,10 +20,34 @@ class UserResourceTest extends CustomApiTestCase
                 'password' => 'brie'
             ]
         ]);
-
         $this->assertResponseStatusCodeSame(201);
 
+        $user = UserFactory::repository()->findOneBy(['email' => 'cheeseplease@example.com']);
+        $this->assertNotNull($user);
+        $this->assertJsonContains([
+            '@id' => '/api/users/'.$user->getUuid()->toString()
+        ]);
+
         $this->logIn($client, 'cheeseplease@example.com', 'brie');
+    }
+
+    public function testCreateUserWithUuid()
+    {
+        $client = self::createClient();
+
+        $uuid = Uuid::uuid4();
+        $client->request('POST', '/api/users', [
+            'json' => [
+                'id' => $uuid,
+                'email' => 'cheeseplease@example.com',
+                'username' => 'cheeseplease',
+                'password' => 'brie'
+            ],
+        ]);
+        $this->assertResponseStatusCodeSame(201);
+        $this->assertJsonContains([
+            '@id' => '/api/users/'.$uuid
+        ]);
     }
 
     public function testUpdateUser()
@@ -32,7 +56,7 @@ class UserResourceTest extends CustomApiTestCase
         $user = UserFactory::new()->create();
         $this->logIn($client, $user);
 
-        $client->request('PUT', '/api/users/' . $user->getId(), [
+        $client->request('PUT', '/api/users/'.$user->getUuid(), [
             'json' => [
                 'username' => 'newusername',
                 'roles' => ['ROLE_ADMIN'] // will be ignored
@@ -52,12 +76,12 @@ class UserResourceTest extends CustomApiTestCase
         $client = self::createClient();
         $user = UserFactory::new()->create([
             'phoneNumber' => '555.123.4567',
-            'username' => 'cheesehead'
+            'username' => 'cheesehead',
         ]);
         $authenticatedUser = UserFactory::new()->create();
         $this->logIn($client, $authenticatedUser);
 
-        $client->request('GET', '/api/users/' . $user->getId());
+        $client->request('GET', '/api/users/'.$user->getUuid());
         $this->assertResponseStatusCodeSame(200);
         $this->assertJsonContains([
             'username' => $user->getUsername(),
@@ -76,7 +100,7 @@ class UserResourceTest extends CustomApiTestCase
         $user->save();
         $this->logIn($client, $user);
 
-        $client->request('GET', '/api/users/' . $user->getId());
+        $client->request('GET', '/api/users/'.$user->getUuid());
         $this->assertJsonContains([
             'phoneNumber' => '555.123.4567',
             'isMe' => true,

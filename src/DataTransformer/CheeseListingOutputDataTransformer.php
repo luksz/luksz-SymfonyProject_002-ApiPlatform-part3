@@ -15,6 +15,7 @@ class CheeseListingOutputDataTransformer implements DataTransformerInterface
     {
         return CheeseListingOutput::createFromEntity($cheeseListing);
     }
+
     public function supportsTransformation($data, string $to, array $context = []): bool
     {
         return $data instanceof CheeseListing && $to === CheeseListingOutput::class;

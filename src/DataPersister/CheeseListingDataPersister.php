@@ -9,9 +9,8 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class CheeseListingDataPersister implements DataPersisterInterface
 {
-
-    private DataPersisterInterface $decoratedDataPersister;
-    private EntityManagerInterface $entityManager;
+    private $decoratedDataPersister;
+    private $entityManager;
 
     public function __construct(DataPersisterInterface $decoratedDataPersister, EntityManagerInterface $entityManager)
     {
@@ -29,20 +28,17 @@ class CheeseListingDataPersister implements DataPersisterInterface
      */
     public function persist($data)
     {
-        $originalData  = $this->entityManager->getUnitOfWork()->getOriginalEntityData($data);
+        $originalData = $this->entityManager->getUnitOfWork()->getOriginalEntityData($data);
         $wasAlreadyPublished = ($originalData['isPublished'] ?? false);
-
         if ($data->getIsPublished() &&  !$wasAlreadyPublished) {
             $notification = new CheeseNotification($data, 'Cheese listing was created!');
             $this->entityManager->persist($notification);
+            $this->entityManager->flush();
         }
 
         return $this->decoratedDataPersister->persist($data);
     }
 
-    /**
-     * @param CheeseListing $data
-     */
     public function remove($data)
     {
         return $this->decoratedDataPersister->remove($data);

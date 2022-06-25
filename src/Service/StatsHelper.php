@@ -48,7 +48,7 @@ class StatsHelper
 
             $stats[$dateString] = $this->createStatsObject($statData);
 
-            if (null !== $limit && count($stats) >= $limit) {
+            if (count($stats) >= $limit) {
                 break;
             }
         }

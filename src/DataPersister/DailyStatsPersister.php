@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\DataPersister;
 
 use ApiPlatform\Core\DataPersister\DataPersisterInterface;
@@ -9,8 +8,7 @@ use Psr\Log\LoggerInterface;
 
 class DailyStatsPersister implements DataPersisterInterface
 {
-
-    protected LoggerInterface $logger;
+    private $logger;
 
     public function __construct(LoggerInterface $logger)
     {
@@ -29,6 +27,7 @@ class DailyStatsPersister implements DataPersisterInterface
     {
         $this->logger->info(sprintf('Update the visitors to "%d"', $data->totalVisitors));
     }
+
     public function remove($data)
     {
         throw new \Exception('not supported!');

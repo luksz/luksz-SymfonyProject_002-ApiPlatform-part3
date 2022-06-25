@@ -19,7 +19,6 @@ class CheeseListingResourceTest extends CustomApiTestCase
         $this->assertResponseStatusCodeSame(401);
 
         $authenticatedUser = UserFactory::new()->create();
-        $authenticatedUser->setRoles(['ROLE_ADMIN']);
         $otherUser = UserFactory::new()->create();
         $this->logIn($client, $authenticatedUser);
 
@@ -35,12 +34,12 @@ class CheeseListingResourceTest extends CustomApiTestCase
         $this->assertResponseStatusCodeSame(201);
 
         $client->request('POST', '/api/cheeses', [
-            'json' => $cheesyData + ['owner' => '/api/users/' . $otherUser->getId()],
+            'json' => $cheesyData + ['owner' => '/api/users/'.$otherUser->getUuid()],
         ]);
         $this->assertResponseStatusCodeSame(400, 'not passing the correct owner');
 
         $client->request('POST', '/api/cheeses', [
-            'json' => $cheesyData + ['owner' => '/api/users/' . $authenticatedUser->getId()],
+            'json' => $cheesyData + ['owner' => '/api/users/'.$authenticatedUser->getUuid()],
         ]);
         $this->assertResponseStatusCodeSame(201);
     }
@@ -56,17 +55,93 @@ class CheeseListingResourceTest extends CustomApiTestCase
         ]);
 
         $this->logIn($client, $user2);
-        $client->request('PUT', '/api/cheeses/' . $cheeseListing->getId(), [
+        $client->request('PUT', '/api/cheeses/'.$cheeseListing->getId(), [
             // try to trick security by reassigning to this user
-            'json' => ['title' => 'updated', 'owner' => '/api/users/' . $user2->getId()]
+            'json' => ['title' => 'updated', 'owner' => '/api/users/'.$user2->getUuid()]
         ]);
         $this->assertResponseStatusCodeSame(403, 'only author can updated');
 
         $this->logIn($client, $user1);
-        $client->request('PUT', '/api/cheeses/' . $cheeseListing->getId(), [
+        $client->request('PUT', '/api/cheeses/'.$cheeseListing->getId(), [
             'json' => ['title' => 'updated']
         ]);
         $this->assertResponseStatusCodeSame(200);
+    }
+
+    public function testPublishCheeseListing()
+    {
+        $client = self::createClient();
+        $user = UserFactory::new()->create();
+
+        $cheeseListing = CheeseListingFactory::new()
+            ->withLongDescription()
+            ->create(['owner' => $user]);
+
+        $this->logIn($client, $user);
+        $client->request('PUT', '/api/cheeses/'.$cheeseListing->getId(), [
+            'json' => ['isPublished' => true]
+        ]);
+        $this->assertResponseStatusCodeSame(200);
+        $cheeseListing->refresh();
+        $this->assertTrue($cheeseListing->getIsPublished());
+        CheeseNotificationFactory::repository()->assertCount(1, 'There should be one notification about being published');
+
+        // publishing again should not create a second notification
+        $client->request('PUT', '/api/cheeses/'.$cheeseListing->getId(), [
+            'json' => ['isPublished' => true]
+        ]);
+        CheeseNotificationFactory::repository()->assertCount(1);
+    }
+
+    public function testPublishCheeseListingValidation()
+    {
+        $client = self::createClient();
+        $user = UserFactory::new()->create();
+        $adminUser = UserFactory::new()->create(['roles' => ['ROLE_ADMIN']]);
+
+        $cheeseListing = CheeseListingFactory::new()
+            ->create(['owner' => $user, 'description' => 'short']);
+
+        // 1) the owner CANNOT publish with a short description
+        $this->logIn($client, $user);
+        $client->request('PUT', '/api/cheeses/'.$cheeseListing->getId(), [
+            'json' => ['isPublished' => true]
+        ]);
+        $this->assertResponseStatusCodeSame(400, 'description is too short');
+
+        // 2) an admin user CAN publish with a short description
+        $this->logIn($client, $adminUser);
+        $client->request('PUT', '/api/cheeses/'.$cheeseListing->getId(), [
+            'json' => ['isPublished' => true]
+        ]);
+        $this->assertResponseStatusCodeSame(200, 'admin CAN publish a short description');
+        $cheeseListing->refresh();
+        $this->assertTrue($cheeseListing->getIsPublished());
+
+        // 3) a normal user CAN make other changes to their listing
+        $this->logIn($client, $user);
+        $client->request('PUT', '/api/cheeses/'.$cheeseListing->getId(), [
+            'json' => ['price' => 12345]
+        ]);
+        $this->assertResponseStatusCodeSame(200, 'user can make other changes on short description');
+        $cheeseListing->refresh();
+        $this->assertSame(12345, $cheeseListing->getPrice());
+
+        // 4) a normal user CANNOT unpublish
+        $this->logIn($client, $user);
+        $client->request('PUT', '/api/cheeses/'.$cheeseListing->getId(), [
+            'json' => ['isPublished' => false]
+        ]);
+        $this->assertResponseStatusCodeSame(400, 'normal user cannot unpublish');
+
+        // 5) an admin user CAN unpublish
+        $this->logIn($client, $adminUser);
+        $client->request('PUT', '/api/cheeses/'.$cheeseListing->getId(), [
+            'json' => ['isPublished' => false]
+        ]);
+        $this->assertResponseStatusCodeSame(200, 'admin can unpublish');
+        $cheeseListing->refresh();
+        $this->assertFalse($cheeseListing->getIsPublished());
     }
 
     public function testGetCheeseListingCollection()
@@ -96,7 +171,7 @@ class CheeseListingResourceTest extends CustomApiTestCase
                 'title' => 'cheese2',
                 'description' => 'cheese',
                 'price' => 1000,
-                'owner' => '/api/users/' . $user->getId(),
+                'owner' => '/api/users/' . $user->getUuid(),
                 'shortDescription' => 'cheese',
                 'createdAtAgo' => '1 second ago',
             ]
@@ -112,55 +187,11 @@ class CheeseListingResourceTest extends CustomApiTestCase
 
         $cheeseListing1 = CheeseListingFactory::new()->create(['owner' => $otherUser]);
 
-        $client->request('GET', '/api/cheeses/' . $cheeseListing1->getId());
+        $client->request('GET', '/api/cheeses/'.$cheeseListing1->getId());
         $this->assertResponseStatusCodeSame(404);
 
-        $response = $client->request('GET', '/api/users/' . $otherUser->getId());
+        $response = $client->request('GET', '/api/users/'.$otherUser->getUuid());
         $data = $response->toArray();
         $this->assertEmpty($data['cheeseListings']);
-    }
-    public function testPublishCheeseListingValidation()
-    {
-        $client = self::createClient();
-        $user = UserFactory::new()->create();
-        $adminUser = UserFactory::new()->create(['roles' => ['ROLE_ADMIN']]);
-        $cheeseListing = CheeseListingFactory::new()
-            ->create(['owner' => $user, 'description' => 'short']);
-        // 1) the owner CANNOT publish with a short description
-        $this->logIn($client, $user);
-        $client->request('PUT', '/api/cheeses/' . $cheeseListing->getId(), [
-            'json' => ['isPublished' => true]
-        ]);
-        $this->assertResponseStatusCodeSame(400, 'description is too short');
-        // 2) an admin user CAN publish with a short description
-        $this->logIn($client, $adminUser);
-        $client->request('PUT', '/api/cheeses/' . $cheeseListing->getId(), [
-            'json' => ['isPublished' => true]
-        ]);
-        $this->assertResponseStatusCodeSame(200, 'admin CAN publish a short description');
-        $cheeseListing->refresh();
-        $this->assertTrue($cheeseListing->getIsPublished());
-        // 3) a normal user CAN make other changes to their listing
-        $this->logIn($client, $user);
-        $client->request('PUT', '/api/cheeses/' . $cheeseListing->getId(), [
-            'json' => ['price' => 12345]
-        ]);
-        $this->assertResponseStatusCodeSame(200, 'user can make other changes on short description');
-        $cheeseListing->refresh();
-        $this->assertSame(12345, $cheeseListing->getPrice());
-        // 4) a normal user CANNOT unpublish
-        $this->logIn($client, $user);
-        $client->request('PUT', '/api/cheeses/' . $cheeseListing->getId(), [
-            'json' => ['isPublished' => false]
-        ]);
-        $this->assertResponseStatusCodeSame(400, 'normal user cannot unpublish');
-        // 5) an admin user CAN unpublish
-        $this->logIn($client, $adminUser);
-        $client->request('PUT', '/api/cheeses/' . $cheeseListing->getId(), [
-            'json' => ['isPublished' => false]
-        ]);
-        $this->assertResponseStatusCodeSame(200, 'admin can unpublish');
-        $cheeseListing->refresh();
-        $this->assertFalse($cheeseListing->getIsPublished());
     }
 }

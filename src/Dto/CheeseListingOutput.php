@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Dto;
 
 use App\Entity\CheeseListing;
@@ -11,31 +10,44 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class CheeseListingOutput
 {
     /**
-     * @Groups({"cheese:read"}) * @Groups({"cheese:read", "user:read"})
+     * The title of this listing
+     *
+     * @Groups({"cheese:read", "user:read"})
+     * @var string
      */
-    public string  $title;
+    public $title;
 
     /**
      * @var string
      * @Groups({"cheese:read"})
      */
     public $description;
+
     /**
      * @var integer
      * @Groups({"cheese:read", "user:read"})
      */
     public $price;
 
+    public $createdAt;
+
     /**
      
      * @Groups({"cheese:read"})
      */
-    public User $owner;
+    public ?User $owner;
 
+    public static function createFromEntity(CheeseListing $cheeseListing): self
+    {
+        $output = new CheeseListingOutput();
+        $output->title = $cheeseListing->getTitle();
+        $output->description = $cheeseListing->getDescription();
+        $output->price = $cheeseListing->getPrice();
+        $output->owner = $cheeseListing->getOwner();
+        $output->createdAt = $cheeseListing->getCreatedAt();
 
-    public $createdAt;
-
-
+        return $output;
+    }
 
     /**
      * @Groups("cheese:read")
@@ -57,16 +69,5 @@ class CheeseListingOutput
     public function getCreatedAtAgo(): string
     {
         return Carbon::instance($this->createdAt)->diffForHumans();
-    }
-
-    public static function createFromEntity(CheeseListing $cheeseListing): self
-    {
-        $output = new CheeseListingOutput();
-        $output->title = $cheeseListing->getTitle();
-        $output->description = $cheeseListing->getDescription();
-        $output->price = $cheeseListing->getPrice();
-        $output->owner = $cheeseListing->getOwner();
-        $output->createdAt = $cheeseListing->getCreatedAt();
-        return $output;
     }
 }

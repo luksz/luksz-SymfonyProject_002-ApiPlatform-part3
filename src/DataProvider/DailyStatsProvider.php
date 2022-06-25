@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\DataProvider;
 
 use ApiPlatform\Core\DataProvider\CollectionDataProviderInterface;
@@ -8,15 +7,14 @@ use ApiPlatform\Core\DataProvider\ContextAwareCollectionDataProviderInterface;
 use ApiPlatform\Core\DataProvider\ItemDataProviderInterface;
 use ApiPlatform\Core\DataProvider\Pagination;
 use ApiPlatform\Core\DataProvider\RestrictedDataProviderInterface;
+use ApiPlatform\Core\Exception\ResourceClassNotSupportedException;
 use App\ApiPlatform\DailyStatsDateFilter;
 use App\Entity\DailyStats;
 use App\Repository\CheeseListingRepository;
 use App\Service\StatsHelper;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class DailyStatsProvider implements ContextAwareCollectionDataProviderInterface, ItemDataProviderInterface, RestrictedDataProviderInterface
 {
-
     private $statsHelper;
     private $pagination;
 
@@ -26,10 +24,9 @@ class DailyStatsProvider implements ContextAwareCollectionDataProviderInterface,
         $this->pagination = $pagination;
     }
 
-
-    public function getCollection(string $resourceClass, string $operationName = null,  array $context = [])
+    public function getCollection(string $resourceClass, string $operationName = null, array $context = [])
     {
-        list($page, $offset, $limit) = $this->pagination->getPagination($resourceClass, $operationName, $context);
+        list($page, $offset, $limit) = $this->pagination->getPagination($resourceClass, $operationName);
 
         $paginator = new DailyStatsPaginator(
             $this->statsHelper,
@@ -38,15 +35,13 @@ class DailyStatsProvider implements ContextAwareCollectionDataProviderInterface,
         );
 
         $fromDate = $context[DailyStatsDateFilter::FROM_FILTER_CONTEXT] ?? null;
-        // you could optionally return a 400 error
-
-
         if ($fromDate) {
             $paginator->setFromDate($fromDate);
         }
 
         return $paginator;
     }
+
     public function getItem(string $resourceClass, $id, string $operationName = null, array $context = [])
     {
         return $this->statsHelper->fetchOne($id);

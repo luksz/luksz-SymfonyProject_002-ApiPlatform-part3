@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\DataTransformer;
 
 use ApiPlatform\Core\DataTransformer\DataTransformerInterface;
@@ -12,6 +11,7 @@ use App\Entity\CheeseListing;
 class CheeseListingInputDataTransformer implements DataTransformerInterface
 {
     private $validator;
+
     public function __construct(ValidatorInterface $validator)
     {
         $this->validator = $validator;
@@ -25,8 +25,10 @@ class CheeseListingInputDataTransformer implements DataTransformerInterface
         $this->validator->validate($input);
 
         $cheeseListing = $context[AbstractItemNormalizer::OBJECT_TO_POPULATE] ?? null;
+
         return $input->createOrUpdateEntity($cheeseListing);
     }
+
     public function supportsTransformation($data, string $to, array $context = []): bool
     {
         if ($data instanceof CheeseListing) {

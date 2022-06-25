@@ -3,19 +3,20 @@
 namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiFilter;
+use ApiPlatform\Core\Annotation\ApiProperty;
 use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Core\Serializer\Filter\PropertyFilter;
+use App\Doctrine\UserSetIsMvpListener;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
-use App\Doctrine\UserSetIsMvpListener;
-use Stringable;
-use ApiPlatform\Core\Annotation\ApiProperty;
 
 /**
  * @ApiResource(
@@ -38,8 +39,8 @@ use ApiPlatform\Core\Annotation\ApiProperty;
  * @ApiFilter(PropertyFilter::class)
  * @UniqueEntity(fields={"username"})
  * @UniqueEntity(fields={"email"})
- * @ORM\Entity(repositoryClass="App\Repository\UserRepository")
  * @ORM\EntityListeners({UserSetIsMvpListener::class})
+ * @ORM\Entity(repositoryClass="App\Repository\UserRepository")
  */
 class User implements UserInterface
 {
@@ -47,11 +48,14 @@ class User implements UserInterface
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
+     * @ApiProperty(identifier=false)
      */
     private $id;
 
     /**
      * @ORM\Column(type="uuid", unique=true)
+     * @ApiProperty(identifier=true)
+     * @Groups({"user:write"})
      */
     private $uuid;
 
@@ -104,14 +108,10 @@ class User implements UserInterface
 
     /**
      * Returns true if this is the currently-authenticated user
+     *
      * @Groups({"user:read"})
      */
-    private  $isMe = false;
-    /**
-     * Returns Extralazy
-     * @Groups({"user:read"})
-     */
-    private Stringable $bio;
+    private $isMe = false;
 
     /**
      * Returns true if this user is an MVP
@@ -120,13 +120,11 @@ class User implements UserInterface
      */
     private $isMvp = false;
 
-    public function __construct()
+    public function __construct(UuidInterface $uuid = null)
     {
         $this->cheeseListings = new ArrayCollection();
+        $this->uuid = $uuid ?: Uuid::uuid4();
     }
-
-
-    // --------------------------------------------
 
     public function getId(): ?int
     {
@@ -222,14 +220,14 @@ class User implements UserInterface
     }
 
     /**
-     * @Groups({"user:read"})
-     * @return Collection<CheeseListing>
-     * @SerializedName("cheeseListings")
      * @ApiProperty(readableLink=true)
+     * @Groups({"user:read"})
+     * @SerializedName("cheeseListings")
+     * @return Collection<CheeseListing>
      */
     public function getPublishedCheeseListings(): Collection
     {
-        return $this->cheeseListings->filter(function (CheeseListing $cheeseListing) {
+        return $this->cheeseListings->filter(function(CheeseListing $cheeseListing) {
             return $cheeseListing->getIsPublished();
         });
     }
@@ -283,9 +281,9 @@ class User implements UserInterface
 
     public function getIsMe(): bool
     {
-
         return $this->isMe;
     }
+
     public function setIsMe(bool $isMe)
     {
         $this->isMe = $isMe;
@@ -295,33 +293,14 @@ class User implements UserInterface
     {
         return $this->isMvp;
     }
+
     public function setIsMvp(bool $isMvp)
     {
         $this->isMvp = $isMvp;
     }
 
-    // public function setLazzyIsMvp(Stringable $isMvp)
-    // {
-    //     $this->isMvp = $isMvp;
-    // }
-
-    /**
-     * Get returns Extralazy
-     */
-    public function getBio()
+    public function getUuid(): UuidInterface
     {
-        return $this->bio;
-    }
-
-    /**
-     * Set returns Extralazy
-     *
-     * @return  self
-     */
-    public function setBio(Stringable $bio)
-    {
-        $this->bio = $bio;
-
-        return $this;
+        return $this->uuid;
     }
 }
