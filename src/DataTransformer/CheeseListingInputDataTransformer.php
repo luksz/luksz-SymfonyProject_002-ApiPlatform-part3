@@ -5,6 +5,7 @@ namespace App\DataTransformer;
 
 use ApiPlatform\Core\DataTransformer\DataTransformerInterface;
 use ApiPlatform\Core\Serializer\AbstractItemNormalizer;
+use ApiPlatform\Core\Validator\ValidatorInterface;
 use App\Dto\CheeseListingInput;
 use App\Entity\CheeseListing;
 
